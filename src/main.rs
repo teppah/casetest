@@ -75,7 +75,6 @@ fn main() {
         let mut actual_output = String::new();
 
         println!("iteration6");
-        stdout.read_to_end()
         stdout.read_to_string(&mut actual_output);
 
         println!("----output for \"{}\" as input----", input);
