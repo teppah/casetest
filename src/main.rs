@@ -1,6 +1,8 @@
 use clap::{App, Arg};
 use std::fs;
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::error::Error;
+use std::io::{Stdin, BufWriter, Write, Read};
 
 fn main() {
     let app = App::new("casetest")
@@ -22,6 +24,26 @@ fn main() {
     let c_file = matches.value_of("file").unwrap();
     let test_file = matches.value_of("cases").unwrap();
 
+
+    let last_index = c_file.rfind(".").unwrap();
+    let (stripped_filename, _) = c_file.split_at(last_index);
+
+    let gcc = match Command::new("gcc")
+        .arg(c_file)
+        .arg("-o")
+        .arg(stripped_filename)
+        .output() {
+        Ok(gcc) => gcc,
+        Err(e) => {
+            eprintln!("Failed to execute gcc:\n{}", e);
+            return;
+        }
+    };
+    if !gcc.status.success() {
+        eprintln!("Failed to compile with gcc:\n{}", String::from_utf8_lossy(&gcc.stderr));
+        return;
+    }
+
     let test_cases = match fs::read_to_string(test_file) {
         Ok(str) => str,
         Err(e) => {
@@ -29,15 +51,36 @@ fn main() {
             return;
         }
     };
+    let mut lines = test_cases.lines();
+    for _ in 0..lines.clone().count() {
+        println!("iteration");
+        let run = Command::new(format!("./{}", stripped_filename))
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        println!("iteration2");
+        let mut stdout = run.stdout.unwrap();
+        let mut stdin = run.stdin.unwrap();
+        println!("iteration3");
 
-    let last_index = c_file.rfind(".").unwrap();
-    let (stripped_filename, _) = c_file.split_at(last_index);
+        let input = lines.next().unwrap();
+        let expected_output = lines.next().unwrap();
+        println!("iteration4");
 
-    let gcc = Command::new("gcc")
-        .arg(c_file)
-        .arg("-o")
-        .arg(stripped_filename)
-        .output()
-        .expect("Failed to execute gcc");
-    println!("{:?}", gcc)
+        stdin.write_all(input.as_bytes());
+        stdin.flush();
+
+        println!("iteration5");
+        let mut actual_output = String::new();
+
+        println!("iteration6");
+        stdout.read_to_end()
+        stdout.read_to_string(&mut actual_output);
+
+        println!("----output for \"{}\" as input----", input);
+        println!("---expected output: {}", expected_output);
+        println!("{}", actual_output);
+    }
 }
+
