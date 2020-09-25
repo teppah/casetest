@@ -1,4 +1,6 @@
 use clap::{App, Arg};
+use std::fs;
+use std::process::Command;
 
 fn main() {
     let app = App::new("casetest")
@@ -15,13 +17,27 @@ fn main() {
             .help("A plaintext file with test cases on odd lines and expected output on even lines")
             .index(2)
             .required(true));
-
     let matches = app.get_matches();
 
     let c_file = matches.value_of("file").unwrap();
     let test_file = matches.value_of("cases").unwrap();
 
-    println!("{} {}", c_file, test_file);
+    let test_cases = match fs::read_to_string(test_file) {
+        Ok(str) => str,
+        Err(e) => {
+            eprintln!("Failed to read test file '{}': {}", test_file, e);
+            return;
+        }
+    };
 
-    
+    let last_index = c_file.rfind(".").unwrap();
+    let (stripped_filename, _) = c_file.split_at(last_index);
+
+    let gcc = Command::new("gcc")
+        .arg(c_file)
+        .arg("-o")
+        .arg(stripped_filename)
+        .output()
+        .expect("Failed to execute gcc");
+    println!("{:?}", gcc)
 }
