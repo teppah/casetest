@@ -3,8 +3,9 @@ use std::fs;
 use std::process::{Command, Stdio};
 use std::error::Error;
 use std::io::{Stdin, BufWriter, Write, Read};
-use ansi_term::Colour::{Green, Red, White, Black};
+use ansi_term::Colour::{Green, Red, White, Black, Blue};
 use ansi_term::Style;
+use std::time::Instant;
 
 fn main() {
     let app = App::new("casetest")
@@ -53,7 +54,12 @@ fn main() {
         }
     };
 
+    let mut failed: usize = 0;
+    let mut successful: usize = 0;
+
     let mut lines = test_cases.lines();
+
+    let before = Instant::now();
     for i in 1..=(lines.clone().count() / 2) {
         let mut exec = Command::new(format!("./{}", stripped_filename))
             .stdin(Stdio::piped())
@@ -92,6 +98,7 @@ fn main() {
                     &White.dimmed().paint(
                         &format!("(input: {})", test_input))
                         .to_string());
+                successful += 1;
             }
             false => {
                 msg.push_str(&Red.paint("✗ ").to_string());
@@ -109,10 +116,21 @@ fn main() {
                 msg.push_str(&format!("\t{}:         {}",
                                       &White.dimmed().paint("Got").to_string(),
                                       output));
+                msg.push('\n');
+                failed += 1;
             }
         };
-
-        println!("{}", msg)
+        println!("{}", msg);
     }
+
+    let after = before.elapsed().as_millis();
+
+    println!("{}", Blue.paint("------Summary------"));
+    let total = failed + successful;
+    println!("Tests: \n\t○ {} total\n\t{}\n\t{}",
+             total,
+             Red.blink().paint(format!("✗ {} failed", failed)),
+             Green.paint(format!("✔ {} passed", successful)));
+    println!("Time elapsed: {} ms", after);
 }
 
