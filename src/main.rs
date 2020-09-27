@@ -66,11 +66,21 @@ fn main() {
 
         stdin.write_all(test_input.as_bytes()).expect("failed to write");
 
-        let output = {
+        let (output, is_success) = {
             let out = exec.wait_with_output().unwrap();
-            String::from_utf8(out.stdout).unwrap()
+            match out.status.success() {
+                true => (String::from_utf8(out.stdout).unwrap(), true),
+                false => {
+                    let err = String::from_utf8(out.stderr)
+                        .unwrap()
+                        .trim()
+                        .to_string();
+                    (err, false)
+                }
+            }
         };
-        println!("Run #{}", runs);
+        println!("---");
+        println!("Run #{}: {}", runs, is_success.to_string().to_uppercase());
         println!("Input: {}", test_input);
         println!("Expected: {:?}", expected_output);
         println!("Actual: {:?}", output.trim());
