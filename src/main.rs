@@ -3,6 +3,8 @@ use std::fs;
 use std::process::{Command, Stdio};
 use std::error::Error;
 use std::io::{Stdin, BufWriter, Write, Read};
+use ansi_term::Colour::{Green, Red, White, Black};
+use ansi_term::Style;
 
 fn main() {
     let app = App::new("casetest")
@@ -50,10 +52,9 @@ fn main() {
             return;
         }
     };
+
     let mut lines = test_cases.lines();
-    let mut runs: u8 = 0;
-    for _ in 0..(lines.clone().count() / 2) {
-        runs += 1;
+    for i in 1..=(lines.clone().count() / 2) {
         let mut exec = Command::new(format!("./{}", stripped_filename))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -69,7 +70,7 @@ fn main() {
         let (output, is_success) = {
             let out = exec.wait_with_output().unwrap();
             match out.status.success() {
-                true => (String::from_utf8(out.stdout).unwrap(), true),
+                true => (String::from_utf8(out.stdout).unwrap().trim().to_string(), true),
                 false => {
                     let err = String::from_utf8(out.stderr)
                         .unwrap()
@@ -79,11 +80,39 @@ fn main() {
                 }
             }
         };
-        println!("---");
-        println!("Run #{}: {}", runs, is_success.to_string().to_uppercase());
-        println!("Input: {}", test_input);
-        println!("Expected: {:?}", expected_output);
-        println!("Actual: {:?}", output.trim());
+
+        let is_success = (expected_output == output) && is_success;
+
+        let mut msg = String::new();
+        match is_success {
+            true => {
+                msg.push_str(&Green.paint("✔ ").to_string());
+                msg.push_str(&format!(" Run #{} {} ", i, Green.paint("success")));
+                msg.push_str(
+                    &White.dimmed().paint(
+                        &format!("(input: {})", test_input))
+                        .to_string());
+            }
+            false => {
+                msg.push_str(&Red.paint("✗ ").to_string());
+                msg.push_str(&format!(" Run #{} {} ",
+                                      i,
+                                      Red.bold().underline().paint("failed")));
+                msg.push_str(&format!("{}\n",
+                                      &White.dimmed().paint(
+                                          &format!(" (input: {})", test_input))
+                                          .to_string()));
+                msg.push('\n');
+                msg.push_str(&format!("\t{}:    {}\n",
+                                      &White.dimmed().paint("Expected"),
+                                      expected_output));
+                msg.push_str(&format!("\t{}:         {}",
+                                      &White.dimmed().paint("Got").to_string(),
+                                      output));
+            }
+        };
+
+        println!("{}", msg)
     }
 }
 
