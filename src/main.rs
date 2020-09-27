@@ -24,7 +24,6 @@ fn main() {
     let c_file = matches.value_of("file").unwrap();
     let test_file = matches.value_of("cases").unwrap();
 
-
     let last_index = c_file.rfind(".").unwrap();
     let (stripped_filename, _) = c_file.split_at(last_index);
 
@@ -52,34 +51,29 @@ fn main() {
         }
     };
     let mut lines = test_cases.lines();
-    for _ in 0..lines.clone().count() {
-        println!("iteration");
-        let run = Command::new(format!("./{}", stripped_filename))
+    let mut runs: u8 = 0;
+    for _ in 0..(lines.clone().count() / 2) {
+        runs += 1;
+        let mut exec = Command::new(format!("./{}", stripped_filename))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
             .unwrap();
-        println!("iteration2");
-        let mut stdout = run.stdout.unwrap();
-        let mut stdin = run.stdin.unwrap();
-        println!("iteration3");
 
-        let input = lines.next().unwrap();
-        let expected_output = lines.next().unwrap();
-        println!("iteration4");
+        let test_input = lines.next().unwrap().trim();
+        let expected_output = lines.next().unwrap().trim();
+        let stdin = exec.stdin.as_mut().expect("Failed to open stdin");
 
-        stdin.write_all(input.as_bytes());
-        stdin.flush();
+        stdin.write_all(test_input.as_bytes()).expect("failed to write");
 
-        println!("iteration5");
-        let mut actual_output = String::new();
-
-        println!("iteration6");
-        stdout.read_to_string(&mut actual_output);
-
-        println!("----output for \"{}\" as input----", input);
-        println!("---expected output: {}", expected_output);
-        println!("{}", actual_output);
+        let output = {
+            let out = exec.wait_with_output().unwrap();
+            String::from_utf8(out.stdout).unwrap()
+        };
+        println!("Run #{}", runs);
+        println!("Input: {}", test_input);
+        println!("Expected: {:?}", expected_output);
+        println!("Actual: {:?}", output.trim());
     }
 }
 
