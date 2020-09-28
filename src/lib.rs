@@ -16,12 +16,21 @@ pub fn compile(source_file: &str, output_file: &str) -> std::io::Result<Output> 
         .output()
 }
 
-pub fn get_files(args: &ArgMatches) -> (String, String, String) {
+pub struct FileNames {
+    pub c_file: String,
+    pub test_file: String,
+    pub compiled_file: String,
+}
+
+pub fn get_files(args: &ArgMatches) -> FileNames {
     let c_file = args.value_of("file").unwrap();
     let test_file = args.value_of("cases").unwrap();
 
-
-    (c_file.to_string(), test_file.to_string(), strip(c_file).to_string())
+    FileNames {
+        c_file: c_file.to_string(),
+        test_file: test_file.to_string(),
+        compiled_file: strip(c_file).to_string(),
+    }
 }
 
 pub fn execute_test_cases(compiled_file: &str, mut lines: core::str::Lines) -> TestResult {
@@ -34,7 +43,7 @@ pub fn execute_test_cases(compiled_file: &str, mut lines: core::str::Lines) -> T
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .unwrap();
+            .expect("Failed to run program");
 
         let test_input = lines.next().unwrap().trim();
         let expected_output = lines.next().unwrap().trim();

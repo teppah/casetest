@@ -7,7 +7,7 @@ use std::time::Instant;
 use ansi_term::Colour::{Black, Blue, Green, Red, White};
 use clap::{App, Arg};
 
-use casetest::{compile, execute_test_cases, get_files, TestResult};
+use casetest::{compile, execute_test_cases, get_files, TestResult, FileNames};
 
 fn main() {
     let app = App::new("casetest")
@@ -26,7 +26,7 @@ fn main() {
             .required(true));
 
     let matches = app.get_matches();
-    let (c_file, test_file, compiled_file) = get_files(&matches);
+    let FileNames { c_file, test_file, compiled_file } = get_files(&matches);
 
     match compile(&c_file, &compiled_file) {
         Ok(out) => {
@@ -39,8 +39,7 @@ fn main() {
             eprintln!("Failed to execute compiler:\n{}", e);
             return;
         }
-    }
-
+    };
 
     let test_cases = match fs::read_to_string(&test_file) {
         Ok(str) => str,
@@ -49,7 +48,6 @@ fn main() {
             return;
         }
     };
-
 
     let mut lines = test_cases.lines();
     let TestResult { passed, failed, total_time_ms } = execute_test_cases(&compiled_file, lines);
