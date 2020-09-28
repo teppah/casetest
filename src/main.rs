@@ -1,13 +1,9 @@
-use std::error::Error;
 use std::fs;
-use std::io::{BufWriter, Read, Stdin, Write};
-use std::process::{Command, Stdio};
-use std::time::Instant;
 
-use ansi_term::Colour::{Black, Blue, Green, Red, White};
+use ansi_term::Colour::{Blue, Green, Red};
 use clap::{App, Arg};
 
-use casetest::{compile, execute_test_cases, get_files, TestResult, FileNames};
+use casetest::{compile, execute_test_cases, FileNames, get_files, TestResult};
 
 fn main() {
     let app = App::new("casetest")
@@ -49,7 +45,7 @@ fn main() {
         }
     };
 
-    let mut lines = test_cases.lines();
+    let lines = test_cases.lines();
     let TestResult { passed, failed, total_time_ms } = execute_test_cases(&compiled_file, lines);
 
     println!("{}", Blue.paint("------Summary------"));

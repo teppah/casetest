@@ -1,11 +1,8 @@
-use std::error::Error;
 use std::io::Write;
-use std::path::Path;
 use std::process::{Command, Output, Stdio};
 use std::time::Instant;
 
-use ansi_term::Colour::{Black, Blue, Green, Red, White};
-use ansi_term::Style;
+use ansi_term::Colour::{Green, Red, White};
 use clap::ArgMatches;
 
 pub fn compile(source_file: &str, output_file: &str) -> std::io::Result<Output> {
@@ -33,6 +30,7 @@ pub fn get_files(args: &ArgMatches) -> FileNames {
     }
 }
 
+// TODO: make this return Result
 pub fn execute_test_cases(compiled_file: &str, mut lines: core::str::Lines) -> TestResult {
     let mut failed: u32 = 0;
     let mut successful: u32 = 0;
@@ -47,8 +45,9 @@ pub fn execute_test_cases(compiled_file: &str, mut lines: core::str::Lines) -> T
 
         let test_input = lines.next().unwrap().trim();
         let expected_output = lines.next().unwrap().trim();
-        let stdin = exec.stdin.as_mut().expect("Failed to open stdin");
 
+        //TODO: handle these unwraps
+        let stdin = exec.stdin.as_mut().expect("Failed to open stdin");
         stdin.write_all(test_input.as_bytes()).expect("failed to write");
 
         let (output, is_success) = {
@@ -112,7 +111,7 @@ pub struct TestResult {
 }
 
 fn strip(file: &str) -> &str {
-    let last_index = file.rfind(".").unwrap();
+    let last_index = file.rfind('.').unwrap();
     let (stripped_filename, _) = file.split_at(last_index);
     stripped_filename
 }
