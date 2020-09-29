@@ -46,14 +46,38 @@ pub fn execute_test_cases(compiled_file: &str, mut lines: core::str::Lines) -> T
         let test_input = lines.next().unwrap().trim();
         let expected_output = lines.next().unwrap().trim();
 
-        //TODO: handle these unwraps
-        let stdin = exec.stdin.as_mut().expect("Failed to open stdin");
-        stdin.write_all(test_input.as_bytes()).expect("failed to write");
-
         let (output, is_success) = {
+            let stdin = match exec.stdin.as_mut() {
+                Some(stdin) => stdin,
+                None => {
+                    println!("{} Run #{} {}: {}",
+                             Red.paint("✗"),
+                             i,
+                             Red.bold().underline().paint("failed to execute"),
+                             White.dimmed().paint("failed to open stdin"));
+                    failed += 1;
+                    continue;
+                }
+            };
+            match stdin.write_all(test_input.as_bytes()) {
+                Ok(_) => (),
+                Err(e) => {
+                    println!("{} Run #{} {}: {}",
+                             Red.paint("✗"),
+                             i,
+                             Red.bold().underline().paint("failed to execute"),
+                             White.dimmed().paint(format!("{}", e)));
+                    failed += 1;
+                    continue;
+                }
+            };
             let out = exec.wait_with_output().unwrap();
             match out.status.success() {
-                true => (String::from_utf8(out.stdout).unwrap().trim().to_string(), true),
+                true => {
+                    let output = String::from_utf8(out.stdout).unwrap().trim().to_string();
+                    let success = output == expected_output;
+                    (output, success)
+                }
                 false => {
                     let err = String::from_utf8(out.stderr)
                         .unwrap()
@@ -63,8 +87,6 @@ pub fn execute_test_cases(compiled_file: &str, mut lines: core::str::Lines) -> T
                 }
             }
         };
-
-        let is_success = (expected_output == output) && is_success;
 
         let mut msg = String::new();
         match is_success {
