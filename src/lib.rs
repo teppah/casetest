@@ -37,11 +37,22 @@ pub fn execute_test_cases(compiled_file: &str, mut lines: core::str::Lines) -> T
 
     let before = Instant::now();
     for i in 1..=(lines.clone().count() / 2) {
-        let mut exec = Command::new(format!("./{}", compiled_file))
+        let mut exec = match Command::new(format!("./{}", compiled_file))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .expect("Failed to run program");
+        {
+            Ok(p) => p,
+            Err(e) => {
+                println!("{} Run #{} {}: {}",
+                         Red.paint("✗"),
+                         i,
+                         Red.bold().underline().paint("failed to execute"),
+                         White.dimmed().paint(format!("{}", e)));
+                failed += 1;
+                continue;
+            }
+        };
 
         let test_input = lines.next().unwrap().trim();
         let expected_output = lines.next().unwrap().trim();
