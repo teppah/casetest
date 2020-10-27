@@ -12,24 +12,23 @@ pub fn compile(source_file: &str, output_file: &str) -> std::io::Result<Output> 
         .output()
 }
 
-pub struct FileNames {
-    pub c_file: String,
-    pub test_file: String,
-    pub compiled_file: String,
+pub struct TestFileNames<'a> {
+    pub c_file: &'a str,
+    pub test_file: &'a str,
+    pub compiled_file: &'a str,
 }
 
-pub fn get_files(args: &ArgMatches) -> FileNames {
+pub fn get_test_files<'a>(args: &'a ArgMatches) -> TestFileNames<'a> {
     let c_file = args.value_of("file").unwrap();
     let test_file = args.value_of("cases").unwrap();
 
-    FileNames {
-        c_file: c_file.to_string(),
-        test_file: test_file.to_string(),
-        compiled_file: strip(c_file).to_string(),
+    TestFileNames {
+        c_file,
+        test_file,
+        compiled_file: strip(c_file),
     }
 }
 
-// TODO: make this return Result
 pub fn execute_test_cases(compiled_file: &str, mut lines: core::str::Lines) -> TestResult {
     let mut failed: u32 = 0;
     let mut successful: u32 = 0;

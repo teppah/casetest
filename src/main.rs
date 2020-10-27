@@ -3,12 +3,12 @@ use std::fs;
 use ansi_term::Colour::{Blue, Green, Red};
 use clap::{App, Arg, SubCommand, AppSettings};
 
-use casetest::{compile, execute_test_cases, FileNames, get_files, TestResult};
+use casetest::{compile, execute_test_cases, TestFileNames, get_test_files, TestResult};
 
 fn main() {
     let app = App::new("casetest")
         .version("1.0")
-        .author("Yi Feng Yang <yifeng@yfyang.dev>")
+        .author("teppah <teppah@yfyang.dev>")
         .about("A tool to run unit tests against single-file C programs")
         .setting(AppSettings::ArgRequiredElseHelp)
         .subcommand(
@@ -32,7 +32,7 @@ fn main() {
 
     match matches.subcommand() {
         ("test", Some(test_matches)) => {
-            let FileNames { c_file, test_file, compiled_file } = get_files(&test_matches);
+            let TestFileNames { c_file, test_file, compiled_file } = get_test_files(&test_matches);
 
             match compile(&c_file, &compiled_file) {
                 Ok(out) => {
