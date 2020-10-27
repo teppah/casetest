@@ -1,11 +1,14 @@
 use std::fs;
 
-use ansi_term::Colour::{Blue, Green, Red};
+use ansi_term::Colour::{Blue, Green, Red, Yellow};
 use clap::{App, Arg, SubCommand, AppSettings};
 
 use casetest::{compile, execute_test_cases, TestFileNames, get_test_files, TestResult};
 
 fn main() {
+    #[cfg(target_os = "windows")]
+        let enabled = ansi_term::enable_ansi_support();
+
     let app = App::new("casetest")
         .version("1.0")
         .author("teppah <teppah@yfyang.dev>")
@@ -28,12 +31,14 @@ fn main() {
             SubCommand::with_name("watch")
         );
     let matches = app.get_matches();
-    println!("{:?}", matches);
 
     match matches.subcommand() {
         ("test", Some(test_matches)) => {
             let TestFileNames { c_file, test_file, compiled_file } = get_test_files(&test_matches);
-
+            println!("{} Testing file \"{}\" against inputs in \"{}\"",
+                     Blue.bold().paint("🛈"),
+                     Yellow.bold().paint(c_file),
+                     Yellow.bold().paint(test_file));
             match compile(&c_file, &compiled_file) {
                 Ok(out) => {
                     if !out.status.success() {
